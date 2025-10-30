@@ -25,12 +25,12 @@ function App() {
       }
       const { latitude, longitude, name, country, timezone } = geoData.results[0];
 
-      // 2) Fetch weather using new "current" fields + correct hourly keys
+      // 2) Fetch weather including current humidity and precipitation
       const params = new URLSearchParams({
         latitude: String(latitude),
         longitude: String(longitude),
         timezone,
-        current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m',
+        current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,precipitation',
         hourly: 'relative_humidity_2m,precipitation'
       });
       const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
@@ -42,19 +42,25 @@ function App() {
         return;
       }
 
-      let humidity = null, precipitation = null;
-      if (weatherData.hourly && weatherData.current.time) {
+      // Prefer current values; fallback to hourly aligned by time if needed
+      let humidity = typeof weatherData.current.relative_humidity_2m === 'number' ? weatherData.current.relative_humidity_2m : null;
+      let precipitation = typeof weatherData.current.precipitation === 'number' ? weatherData.current.precipitation : null;
+
+      if ((humidity === null || precipitation === null) && weatherData.hourly && weatherData.current.time) {
         const idx = weatherData.hourly.time.indexOf(weatherData.current.time);
         if (idx >= 0) {
-          const rh = weatherData.hourly.relative_humidity_2m?.[idx];
-          const pr = weatherData.hourly.precipitation?.[idx];
-          humidity = typeof rh === 'number' ? rh : null;
-          precipitation = typeof pr === 'number' ? pr : null;
+          if (humidity === null) {
+            const rh = weatherData.hourly.relative_humidity_2m?.[idx];
+            humidity = typeof rh === 'number' ? rh : null;
+          }
+          if (precipitation === null) {
+            const pr = weatherData.hourly.precipitation?.[idx];
+            precipitation = typeof pr === 'number' ? pr : null;
+          }
         }
       }
 
       setWeather({
-        // normalize to previous component expectations
         temperature: weatherData.current.temperature_2m,
         windspeed: weatherData.current.wind_speed_10m,
         weathercode: weatherData.current.weather_code,
