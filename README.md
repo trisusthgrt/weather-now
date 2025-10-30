@@ -48,10 +48,22 @@ weather-now/
 │  │  └─ WeatherForm.jsx
 │  ├─ App.css
 │  ├─ App.jsx
-│  └─ index.js
+│  ├─ App.test.jsx
+│  ├─ index.js
+│  └─ setupTests.js
 ├─ package.json
 └─ README.md
 ```
+
+## Testing
+This project uses Jest and React Testing Library.
+
+- Run all tests once:
+```bash
+npm test
+```
+
+The tests include simple smoke tests to ensure the app renders the heading and the search form and that typing in the input works.
 
 ## Customization
 - Styling is centralized in `src/App.css`.
